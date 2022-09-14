@@ -104,6 +104,7 @@ def get_cross_domain_train_loader(source_root, target_root, batch_size, image_si
     # source_transform = T.Compose(source_transform)
     # target_transform = T.Compose(target_transform)
 
+    # WARNING!!! Super sensitive to randomerasing (scale 0.25) and padding (fill 127)
     transform = T.Compose([
         T.Resize(image_size, interpolation=InterpolationMode.BICUBIC),
         T.RandomHorizontalFlip(),
@@ -111,8 +112,8 @@ def get_cross_domain_train_loader(source_root, target_root, batch_size, image_si
         T.RandomCrop(image_size),
         T.ToTensor(),
         T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        T.RandomErasing()
-        # T.RandomErasing(scale=(0.02, 0.25))
+        # T.RandomErasing()
+        T.RandomErasing(scale=(0.02, 0.25))
         # RandomErasing(probability=0.5, mode='pixel', max_count=1, device='cpu')
     ])
 
