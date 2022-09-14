@@ -15,6 +15,9 @@ from data.sampler import CrossDatasetDistributedSampler
 from data.sampler import CrossDatasetRandomSampler
 from data.sampler import RandomIdentitySampler
 
+from torchvision.transforms.functional import InterpolationMode
+from data.random_erasing import RandomErasing
+
 
 def collate_fn(batch):  # img, label, cam_id, img_path, img_id
     samples = list(zip(*batch))
@@ -72,34 +75,49 @@ def get_cross_domain_train_loader(source_root, target_root, batch_size, image_si
         color_jitter = (color_jitter, color_jitter)
 
     # data pre-processing
-    source_transform = [T.Resize(image_size)]
-    target_transform = [T.Resize(image_size)]
+    # source_transform = [T.Resize(image_size)]
+    # target_transform = [T.Resize(image_size)]
 
-    if random_flip[0]:
-        source_transform.append(T.RandomHorizontalFlip())
-    if random_flip[1]:
-        target_transform.append(T.RandomHorizontalFlip())
+    # if random_flip[0]:
+    #     source_transform.append(T.RandomHorizontalFlip())
+    # if random_flip[1]:
+    #     target_transform.append(T.RandomHorizontalFlip())
 
-    if color_jitter[0]:
-        source_transform.append(T.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0))
-    if color_jitter[1]:
-        target_transform.append(T.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0))
+    # if color_jitter[0]:
+    #     source_transform.append(T.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0))
+    # if color_jitter[1]:
+    #     target_transform.append(T.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0))
 
-    if random_crop[0]:
-        source_transform.extend([T.Pad(padding, fill=127), T.RandomCrop(image_size)])
-    if random_crop[1]:
-        target_transform.extend([T.Pad(padding, fill=127), T.RandomCrop(image_size)])
+    # if random_crop[0]:
+    #     source_transform.extend([T.Pad(padding, fill=127), T.RandomCrop(image_size)])
+    # if random_crop[1]:
+    #     target_transform.extend([T.Pad(padding, fill=127), T.RandomCrop(image_size)])
 
-    source_transform.extend([T.ToTensor(), T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
-    target_transform.extend([T.ToTensor(), T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+    # source_transform.extend([T.ToTensor(), T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+    # target_transform.extend([T.ToTensor(), T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
 
-    if random_erase[0]:
-        source_transform.append(T.RandomErasing(scale=(0.02, 0.25)))
-    if random_erase[1]:
-        target_transform.append(T.RandomErasing(scale=(0.02, 0.25)))
+    # if random_erase[0]:
+    #     source_transform.append(T.RandomErasing(scale=(0.02, 0.25)))
+    # if random_erase[1]:
+    #     target_transform.append(T.RandomErasing(scale=(0.02, 0.25)))
 
-    source_transform = T.Compose(source_transform)
-    target_transform = T.Compose(target_transform)
+    # source_transform = T.Compose(source_transform)
+    # target_transform = T.Compose(target_transform)
+
+    transform = T.Compose([
+        T.Resize(image_size, interpolation=InterpolationMode.BICUBIC),
+        T.RandomHorizontalFlip(),
+        T.Pad(padding, fill=127),
+        T.RandomCrop(image_size),
+        T.ToTensor(),
+        T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        T.RandomErasing()
+        # T.RandomErasing(scale=(0.02, 0.25))
+        # RandomErasing(probability=0.5, mode='pixel', max_count=1, device='cpu')
+    ])
+
+    source_transform = transform
+    target_transform = transform
 
     # dataset
     source_dataset = ImageFolder(source_root, transform=source_transform, recursive=True,
