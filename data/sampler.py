@@ -114,7 +114,8 @@ class CrossDatasetDistributedSampler(Sampler):
         if self.source_size >= self.target_size:
             source_perm = source_perm[:self.target_size]
         else:
-            pad = np.random.choice(source_perm, self.target_size - self.source_size, replace=False)
+            replace = self.source_size * 2 < self.target_size
+            pad = np.random.choice(source_perm, self.target_size - self.source_size, replace=replace)
             source_perm = np.concatenate([source_perm, pad])
         source_perm = source_perm.tolist()
 
